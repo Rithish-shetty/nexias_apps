@@ -112,12 +112,7 @@ export default function App() {
                 <button onClick={() => scrollToSection('contact')} className="mobile-nav-link">
                   Contact
                 </button>
-                <button
-                  onClick={() => scrollToSection('contact')}
-                  className="cta-button mobile-full"
-                >
-                  Let's Talk
-                </button>
+                
               </div>
             </div>
           )}
