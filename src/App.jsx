@@ -259,7 +259,7 @@ export default function App() {
               <a href="https://x.com/Nexias_apps" target="_blank" rel="noopener noreferrer" className="social-link">
                 <LucideTwitter size={20} />
               </a>
-              <a href="mailto:contact@nexias.dev" className="social-link">
+              <a href="" className="social-link">
                 <Mail size={20} />
               </a>
             </div>
