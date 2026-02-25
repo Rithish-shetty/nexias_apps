@@ -1,546 +1,512 @@
 import { useState, useEffect, useRef } from 'react';
+import './App.css';
 
 export default function App() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const refs = useRef([]);
 
   const scrollTo = (id) => {
-    setMobileMenuOpen(false);
+    setMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Scroll reveal
-  const fadeRefs = useRef([]);
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting) e.target.classList.add('vis');
-      }),
-      { threshold: 0.1 }
-    );
-    fadeRefs.current.forEach(el => el && observer.observe(el));
-    return () => observer.disconnect();
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
-  const fadeRef = (el) => { if (el && !fadeRefs.current.includes(el)) fadeRefs.current.push(el); };
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.07 }
+    );
+    refs.current.forEach(el => el && obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+  const r = (el) => { if (el && !refs.current.includes(el)) refs.current.push(el); };
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+    <div className="app">
 
-        :root {
-          --bg: #09090b;
-          --surface: #111114;
-          --border: rgba(255,255,255,0.08);
-          --accent: #22d3ee;
-          --accent-dim: rgba(34,211,238,0.1);
-          --text: #f4f4f5;
-          --muted: #71717a;
-          --muted2: #a1a1aa;
-        }
-
-        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-          background: var(--bg);
-          color: var(--text);
-          font-family: 'DM Sans', sans-serif;
-          line-height: 1.6;
-          -webkit-font-smoothing: antialiased;
-          overflow-x: hidden;
-        }
-
-        .glow-1 {
-          position: fixed; width: 700px; height: 700px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%);
-          top: -220px; right: -220px; pointer-events: none; z-index: 0;
-        }
-        .glow-2 {
-          position: fixed; width: 600px; height: 600px; border-radius: 50%;
-          background: radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%);
-          bottom: -100px; left: -200px; pointer-events: none; z-index: 0;
-        }
-
-        /* NAV */
-        .nav {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          height: 64px; padding: 0 2rem;
-          display: flex; align-items: center; justify-content: space-between;
-          background: rgba(9,9,11,0.82);
-          backdrop-filter: blur(16px);
-          border-bottom: 1px solid var(--border);
-        }
-        .nav-logo {
-          font-family: 'Syne', sans-serif;
-          font-weight: 800; font-size: 1.1rem;
-          letter-spacing: -0.02em; color: var(--text);
-          background: none; border: none; cursor: pointer;
-        }
-        .nav-logo span { color: var(--accent); }
-        .nav-links { display: flex; gap: 2rem; align-items: center; }
-        .nav-link {
-          background: none; border: none;
-          color: var(--muted2); font-size: 0.875rem;
-          cursor: pointer; font-family: 'DM Sans', sans-serif;
-          transition: color 0.2s;
-        }
-        .nav-link:hover { color: var(--text); }
-        .nav-cta {
-          padding: 0.42rem 1rem;
-          border: 1px solid rgba(34,211,238,0.4);
-          border-radius: 6px;
-          background: transparent;
-          color: var(--accent);
-          font-size: 0.8rem; font-family: 'DM Sans', sans-serif;
-          cursor: pointer; transition: background 0.2s;
-        }
-        .nav-cta:hover { background: var(--accent-dim); }
-
-        .ham {
-          display: none; background: none; border: none;
-          cursor: pointer; flex-direction: column; gap: 5px; padding: 4px;
-        }
-        .ham span { display: block; width: 20px; height: 1.5px; background: var(--text); }
-
-        .mob-menu {
-          position: fixed; top: 64px; left: 0; right: 0; z-index: 99;
-          background: rgba(9,9,11,0.97); backdrop-filter: blur(16px);
-          padding: 1.5rem 2rem; flex-direction: column; gap: 1.1rem;
-          border-bottom: 1px solid var(--border);
-        }
-        .mob-menu.open { display: flex; }
-        .mob-menu.closed { display: none; }
-        .mob-link {
-          background: none; border: none;
-          color: var(--muted2); font-size: 1rem;
-          cursor: pointer; font-family: 'DM Sans', sans-serif;
-          text-align: left; transition: color 0.2s;
-        }
-        .mob-link:hover { color: var(--text); }
-
-        /* HERO */
-        .hero {
-          min-height: 100vh;
-          display: flex; align-items: center; justify-content: center;
-          padding: 120px 2rem 80px; text-align: center;
-          position: relative; z-index: 1;
-        }
-        .hero-inner { max-width: 680px; }
-
-        .badge {
-          display: inline-flex; align-items: center; gap: 0.5rem;
-          padding: 0.32rem 0.85rem;
-          border: 1px solid rgba(34,211,238,0.25);
-          border-radius: 100px;
-          background: rgba(34,211,238,0.05);
-          font-size: 0.73rem; color: var(--accent);
-          margin-bottom: 1.75rem;
-          animation: fadeUp 0.5s 0.1s both;
-        }
-        .badge-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: var(--accent); animation: blink 2s infinite;
-        }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
-
-        .hero h1 {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(2.3rem, 6vw, 4rem);
-          font-weight: 800; line-height: 1.1;
-          letter-spacing: -0.03em; margin-bottom: 1.25rem;
-          animation: fadeUp 0.5s 0.2s both;
-        }
-        .grad {
-          background: linear-gradient(90deg, var(--accent) 0%, #818cf8 100%);
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-
-        .hero-desc {
-          font-size: 1rem; color: var(--muted2); max-width: 480px;
-          margin: 0 auto 2.5rem; line-height: 1.7;
-          animation: fadeUp 0.5s 0.3s both;
-        }
-
-        .hero-btns {
-          display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
-          animation: fadeUp 0.5s 0.4s both;
-        }
-        .btn-primary {
-          padding: 0.7rem 1.7rem;
-          background: var(--accent); color: #09090b;
-          border: none; border-radius: 8px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.875rem; font-weight: 600;
-          cursor: pointer; transition: opacity 0.2s;
-          display: inline-flex; align-items: center; gap: 0.4rem;
-        }
-        .btn-primary:hover { opacity: 0.85; }
-        .btn-ghost {
-          padding: 0.7rem 1.7rem;
-          background: transparent;
-          border: 1px solid var(--border);
-          color: var(--text); border-radius: 8px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.875rem; font-weight: 400;
-          cursor: pointer; transition: border-color 0.2s, background 0.2s;
-        }
-        .btn-ghost:hover { border-color: var(--muted); background: rgba(255,255,255,0.03); }
-
-        .scroll-cue {
-          margin-top: 3.5rem; color: var(--muted);
-          font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
-          display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
-          animation: fadeUp 0.5s 0.6s both;
-        }
-        .scroll-line {
-          width: 1px; height: 36px;
-          background: linear-gradient(to bottom, var(--muted), transparent);
-        }
-
-        /* DIVIDER */
-        .div { border: none; border-top: 1px solid var(--border); margin: 0; position: relative; z-index: 1; }
-
-        /* SECTION */
-        section { padding: 80px 2rem; position: relative; z-index: 1; }
-        .container { max-width: 1060px; margin: 0 auto; }
-        .sec-label {
-          font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em;
-          text-transform: uppercase; color: var(--accent); margin-bottom: 0.6rem;
-        }
-        .sec-title {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(1.5rem, 3vw, 2rem);
-          font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.6rem;
-        }
-        .sec-sub { font-size: 0.9rem; color: var(--muted2); max-width: 440px; }
-
-        /* SERVICES */
-        #services { background: var(--surface); }
-        .svc-header { margin-bottom: 2.5rem; }
-        .svc-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 1.25rem;
-        }
-        .svc-card {
-          border: 1px solid var(--border); border-radius: 12px;
-          padding: 1.75rem; background: var(--bg);
-          transition: border-color 0.25s, transform 0.25s;
-        }
-        .svc-card:hover { border-color: rgba(34,211,238,0.28); transform: translateY(-2px); }
-        .svc-icon {
-          width: 42px; height: 42px; border-radius: 10px;
-          background: var(--accent-dim);
-          display: flex; align-items: center; justify-content: center;
-          margin-bottom: 1.1rem; color: var(--accent);
-        }
-        .svc-card h3 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1rem; font-weight: 700; margin-bottom: 0.45rem;
-        }
-        .svc-card p { font-size: 0.85rem; color: var(--muted2); margin-bottom: 1.1rem; }
-        .tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-        .tag {
-          padding: 0.2rem 0.6rem;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid var(--border); border-radius: 100px;
-          font-size: 0.7rem; color: var(--muted2); font-family: monospace;
-        }
-
-        /* WORK */
-        #work { background: var(--bg); }
-        .work-header { margin-bottom: 2.5rem; }
-        .proj-card {
-          max-width: 580px;
-          border: 1px solid var(--border); border-radius: 14px;
-          overflow: hidden; background: var(--surface);
-          transition: border-color 0.25s, transform 0.25s;
-        }
-        .proj-card:hover { border-color: rgba(34,211,238,0.28); transform: translateY(-3px); }
-        .proj-top {
-          height: 160px;
-          background: linear-gradient(135deg, rgba(34,211,238,0.12), rgba(99,102,241,0.12));
-          display: flex; align-items: center; justify-content: center;
-          border-bottom: 1px solid var(--border); position: relative; overflow: hidden;
-        }
-        .proj-top::before {
-          content: '';
-          position: absolute; inset: 0;
-          background:
-            repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.03) 40px),
-            repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.03) 40px);
-        }
-        .app-icon {
-          width: 66px; height: 66px; border-radius: 16px;
-          background: linear-gradient(135deg, #0e7490, #3730a3);
-          display: flex; align-items: center; justify-content: center;
-          position: relative; z-index: 1;
-          box-shadow: 0 16px 36px rgba(0,0,0,0.5); color: #fff;
-        }
-        .proj-body { padding: 1.6rem; }
-        .proj-cat {
-          font-size: 0.68rem; text-transform: uppercase;
-          letter-spacing: 0.1em; color: var(--accent); font-weight: 500; margin-bottom: 0.35rem;
-        }
-        .proj-body h3 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.25rem; font-weight: 700; margin-bottom: 0.45rem;
-        }
-        .proj-body p { font-size: 0.85rem; color: var(--muted2); margin-bottom: 1.4rem; }
-        .tech-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.5rem; }
-        .tech-tag {
-          padding: 0.22rem 0.6rem;
-          background: rgba(34,211,238,0.05);
-          border: 1px solid rgba(34,211,238,0.13);
-          border-radius: 100px; font-size: 0.7rem;
-          color: var(--muted2); font-family: monospace;
-        }
-        .soon-pill {
-          display: inline-flex; align-items: center; gap: 0.35rem;
-          padding: 0.35rem 0.8rem;
-          background: rgba(251,191,36,0.07);
-          border: 1px solid rgba(251,191,36,0.2);
-          border-radius: 8px; font-size: 0.75rem; color: #fbbf24;
-        }
-
-        /* CONTACT */
-        #contact { background: var(--surface); }
-        .contact-wrap { max-width: 520px; }
-        .contact-wrap h2 {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(1.5rem, 3vw, 2rem);
-          font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.65rem;
-        }
-        .contact-wrap p { font-size: 0.9rem; color: var(--muted2); margin-bottom: 2rem; }
-        .socials { display: flex; gap: 0.65rem; flex-wrap: wrap; }
-        .soc-btn {
-          padding: 0.6rem 1.1rem;
-          border: 1px solid var(--border); border-radius: 8px;
-          background: transparent; color: var(--muted2);
-          font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
-          cursor: pointer; text-decoration: none;
-          display: inline-flex; align-items: center; gap: 0.45rem;
-          transition: all 0.2s;
-        }
-        .soc-btn:hover { border-color: var(--muted); color: var(--text); background: rgba(255,255,255,0.03); }
-
-        /* FOOTER */
-        .footer {
-          padding: 1.75rem 2rem;
-          border-top: 1px solid var(--border);
-          background: var(--bg);
-          display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
-          position: relative; z-index: 1;
-        }
-        .f-logo {
-          font-family: 'Syne', sans-serif;
-          font-weight: 800; font-size: 0.9rem; color: var(--text);
-          background: none; border: none;
-        }
-        .f-logo span { color: var(--accent); }
-        .footer p { font-size: 0.78rem; color: var(--muted); }
-
-        /* ANIMATIONS */
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(14px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
-        .fade-up.vis { opacity: 1; transform: translateY(0); }
-
-        /* RESPONSIVE */
-        @media (max-width: 767px) {
-          .nav-links { display: none; }
-          .ham { display: flex; }
-          .nav { padding: 0 1.25rem; }
-          section { padding: 60px 1.25rem; }
-          .footer { flex-direction: column; text-align: center; }
-        }
-        @media (min-width: 768px) {
-          .ham { display: none; }
-        }
-      `}</style>
-
-      <div className="glow-1" />
-      <div className="glow-2" />
-
-      {/* NAV */}
-      <nav className="nav">
-        <button className="nav-logo" onClick={() => scrollTo('hero')}>
-          nexias<span>_</span>dev
+      {/* ── NAV ── */}
+      <nav className={`nav${scrolled ? ' nav-scrolled' : ''}`}>
+        <button className="logo" onClick={() => scrollTo('hero')}>
+          Nexias<span>Dev</span>
         </button>
         <div className="nav-links">
-          <button className="nav-link" onClick={() => scrollTo('services')}>Services</button>
-          <button className="nav-link" onClick={() => scrollTo('work')}>Work</button>
-          <button className="nav-link" onClick={() => scrollTo('contact')}>Contact</button>
-          <button className="nav-cta" onClick={() => scrollTo('contact')}>Let's Talk</button>
+          <button onClick={() => scrollTo('services')}>Services</button>
+          <button onClick={() => scrollTo('work')}>Work</button>
+          <button onClick={() => scrollTo('about')}>About</button>
+          <button onClick={() => scrollTo('contact')}>Contact</button>
+          <button className="nav-cta" onClick={() => scrollTo('contact')}>Let's Talk →</button>
         </div>
-        <button className="ham" onClick={() => setMobileMenuOpen(o => !o)} aria-label="Menu">
-          <span /><span /><span />
+        <button className="ham" onClick={() => setMenuOpen(o => !o)} aria-label="menu">
+          <span className={menuOpen ? 'open' : ''} /><span className={menuOpen ? 'open' : ''} /><span className={menuOpen ? 'open' : ''} />
         </button>
       </nav>
 
-      <div className={`mob-menu ${mobileMenuOpen ? 'open' : 'closed'}`}>
-        <button className="mob-link" onClick={() => scrollTo('services')}>Services</button>
-        <button className="mob-link" onClick={() => scrollTo('work')}>Work</button>
-        <button className="mob-link" onClick={() => scrollTo('contact')}>Contact</button>
-      </div>
+      {menuOpen && (
+        <div className="mob-menu">
+          <button onClick={() => scrollTo('services')}>Services</button>
+          <button onClick={() => scrollTo('work')}>Work</button>
+          <button onClick={() => scrollTo('about')}>About</button>
+          <button onClick={() => scrollTo('contact')}>Contact</button>
+        </div>
+      )}
 
-      {/* HERO */}
+      {/* ── HERO ── */}
       <section className="hero" id="hero">
+        {/* Background texture */}
+        <div className="hero-bg">
+          <div className="hero-grid" />
+          <div className="hero-blob b1" />
+          <div className="hero-blob b2" />
+        </div>
+
         <div className="hero-inner">
-          <div className="badge">
-            <span className="badge-dot" />
-            Available for new projects
+          <div className="hero-left">
+            <div className="available"><span className="dot" />Open to new projects</div>
+            <h1>
+              Mobile apps &amp;<br />
+              websites that<br />
+              <span className="hero-em">grow businesses.</span>
+            </h1>
+            <p className="hero-sub">
+              I'm Rithish — a full-stack developer based in India. I design and build
+              fast, clean mobile apps and websites that help businesses reach more customers.
+            </p>
+            <div className="hero-btns">
+              <button className="btn-primary" onClick={() => scrollTo('work')}>
+                See My Work
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+              <button className="btn-secondary" onClick={() => scrollTo('contact')}>Start a Project</button>
+            </div>
+            <div className="hero-trusted">
+              <span className="trusted-label">Built with</span>
+              <div className="tech-pills">
+                {['React Native', 'React', 'Next.js', 'Node.js'].map(t => (
+                  <span key={t}>{t}</span>
+                ))}
+              </div>
+            </div>
           </div>
-          <h1>
-            Building apps<br />
-            <span className="grad">people actually use.</span>
-          </h1>
-          <p className="hero-desc">
-            Mobile & web development — React Native, React, Node.js. From idea to launch, fast and clean.
-          </p>
-          <div className="hero-btns">
-            <button className="btn-primary" onClick={() => scrollTo('work')}>
-              View Work
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
-            </button>
-            <button className="btn-ghost" onClick={() => scrollTo('contact')}>Start a Project</button>
-          </div>
-          <div className="scroll-cue">
-            scroll
-            <div className="scroll-line" />
+
+          <div className="hero-right">
+            <div className="phone-wrap">
+              <div className="phone-shadow" />
+              <div className="phone-mock">
+                <div className="phone-pill" />
+                <div className="phone-screen">
+                  <div className="screen-bar">
+                    <div className="screen-avatar">AI</div>
+                    <div>
+                      <p className="screen-name">SmartLearn AI</p>
+                      <p className="screen-status">● Online</p>
+                    </div>
+                  </div>
+                  <div className="chat-area">
+                    <div className="bubble bubble-ai">
+                      <span className="bubble-label">AI Tutor</span>
+                      <p>Hey! What would you like to learn today? 👋</p>
+                    </div>
+                    <div className="bubble bubble-user">
+                      <p>Explain Newton's laws</p>
+                    </div>
+                    <div className="bubble bubble-ai">
+                      <span className="bubble-label">AI Tutor</span>
+                      <p>Newton's First Law: an object stays at rest unless a force acts on it...</p>
+                    </div>
+                    <div className="bubble bubble-ai typing">
+                      <span /><span /><span />
+                    </div>
+                  </div>
+                  <div className="chat-input">
+                    <span>Ask anything...</span>
+                    <div className="send-btn">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating cards */}
+              <div className="float-card fc-1">
+                <span className="fc-icon">📱</span>
+                <div>
+                  <p className="fc-title">Mobile First</p>
+                  <p className="fc-sub">React Native</p>
+                </div>
+              </div>
+              <div className="float-card fc-2">
+                <span className="fc-icon">⚡</span>
+                <div>
+                  <p className="fc-title">Fast Delivery</p>
+                  <p className="fc-sub">3 months or less</p>
+                </div>
+              </div>
+              <div className="float-card fc-3">
+                <div className="fc-stars">★★★★★</div>
+                <p className="fc-sub">Client satisfaction</p>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      <hr className="div" />
-
-      {/* SERVICES */}
-      <section id="services">
-        <div className="container">
-          <div className="svc-header fade-up" ref={fadeRef}>
-            <div className="sec-label">What I Build</div>
-            <h2 className="sec-title">Services</h2>
-            <p className="sec-sub">Full-stack development focused on performance, quality, and clean code.</p>
-          </div>
-          <div className="svc-grid">
-            {[
-              {
-                icon: (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
-                  </svg>
-                ),
-                title: 'Mobile Apps',
-                desc: 'Production-grade Android apps built with React Native — smooth, fast, and user-friendly.',
-                tags: ['React Native', 'Android'],
-                delay: '0s',
-              },
-              {
-                icon: (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
-                  </svg>
-                ),
-                title: 'Web Development',
-                desc: 'Scalable websites built with modern tech — fast, clean, and maintainable.',
-                tags: ['React', 'Next.js'],
-                delay: '0.08s',
-              },
-            ].map((s, i) => (
-              <div className="svc-card fade-up" ref={fadeRef} style={{ transitionDelay: s.delay }} key={i}>
-                <div className="svc-icon">{s.icon}</div>
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
-                <div className="tags">{s.tags.map(t => <span className="tag" key={t}>{t}</span>)}</div>
-              </div>
+        {/* Marquee strip */}
+        <div className="marquee-wrap">
+          <div className="marquee-track">
+            {['Mobile Apps', 'Web Development', 'React Native', 'Next.js', 'Node.js', 'UI Design', 'API Integration', 'Play Store', 'Full Stack', 'Mobile Apps', 'Web Development', 'React Native', 'Next.js', 'Node.js', 'UI Design', 'API Integration', 'Play Store', 'Full Stack'].map((t, i) => (
+              <span key={i}>{t} <em>·</em></span>
             ))}
           </div>
         </div>
       </section>
 
-      <hr className="div" />
-
-      {/* WORK */}
-      <section id="work">
+      {/* ── SERVICES ── */}
+      <section id="services" className="section">
         <div className="container">
-          <div className="work-header fade-up" ref={fadeRef}>
-            <div className="sec-label">Portfolio</div>
-            <h2 className="sec-title">Recent Projects</h2>
-            <p className="sec-sub">Apps I've built and shipped.</p>
+          <div className="section-head reveal" ref={r}>
+            <div className="section-label">Services</div>
+            <h2>Two things. Done exceptionally well.</h2>
+            <p className="section-sub">I focus only on mobile apps and websites — deep expertise, not a jack of all trades.</p>
           </div>
-          <div className="proj-card fade-up" ref={fadeRef}>
-            <div className="proj-top">
-              <div className="app-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" />
-                  <path d="M12 8v4l3 1.5" />
-                </svg>
+
+          <div className="services-grid">
+            {/* Mobile */}
+            <div className="svc-card svc-dark reveal" ref={r}>
+              <div className="svc-card-top">
+                <span className="svc-num">01</span>
+                <span className="svc-badge">Most Popular</span>
+              </div>
+              <div className="svc-icon-lg">📱</div>
+              <h3>Mobile App Development</h3>
+              <p>Android apps built with React Native — smooth, native-feeling, and ready for the Play Store. I handle design, development, and backend integration.</p>
+              <ul className="svc-list">
+                <li>Custom UI & UX design</li>
+                <li>Offline support</li>
+                <li>Push notifications</li>
+                <li>API & backend integration</li>
+                <li>Play Store submission</li>
+              </ul>
+              <div className="tags">
+                <span>React Native</span><span>Android</span><span>Redux Toolkit</span><span>Node.js</span>
               </div>
             </div>
-            <div className="proj-body">
-              <div className="proj-cat">Mobile App · Android</div>
+
+            {/* Web */}
+            <div className="svc-card svc-light reveal" ref={r} style={{ transitionDelay: '0.1s' }}>
+              <div className="svc-card-top">
+                <span className="svc-num">02</span>
+              </div>
+              <div className="svc-icon-lg">🌐</div>
+              <h3>Website Development</h3>
+              <p>Modern, fast websites and web apps built with React and Next.js. From portfolios to full web platforms — clean design and great performance.</p>
+              <ul className="svc-list">
+                <li>Responsive on all devices</li>
+                <li>Fast load times & SEO ready</li>
+                <li>Custom animations</li>
+                <li>CMS integration</li>
+                <li>Hosting & deployment</li>
+              </ul>
+              <div className="tags">
+                <span>React</span><span>Next.js</span><span>Tailwind CSS</span><span>Node.js</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Process strip */}
+          <div className="process-strip reveal" ref={r}>
+            <p className="process-title">How I work</p>
+            <div className="process-steps">
+              {['Understand your idea', 'Plan & propose', 'Design & build', 'Test & refine', 'Launch & support'].map((s, i) => (
+                <div className="process-step" key={i}>
+                  <div className="ps-num">{i + 1}</div>
+                  <p>{s}</p>
+                  {i < 4 && <div className="ps-arrow">→</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── WORK ── */}
+      <section id="work" className="section section-tinted">
+        <div className="container">
+          <div className="section-head reveal" ref={r}>
+            <div className="section-label">Work</div>
+            <h2>Recent projects</h2>
+            <p className="section-sub">Apps and sites I've designed and built end-to-end.</p>
+          </div>
+
+          <div className="project-feature reveal" ref={r}>
+            <div className="pf-left">
+              <div className="pf-meta">
+                <span className="proj-type">📱 Mobile App · Android</span>
+                <span className="proj-status">Play Store — Coming Soon</span>
+              </div>
               <h3>SmartLearn AI</h3>
-              <p>An AI-powered learning app where users can chat with AI tutors, get personalized explanations, and access multiple learning features.</p>
-              <div className="tech-tags">
-                {['React Native', 'Node.js', 'Express.js', 'Redux Toolkit'].map(t => (
-                  <span className="tech-tag" key={t}>{t}</span>
+              <p>
+                An AI-powered learning app where students can chat with AI tutors,
+                get instant explanations, quiz themselves, and track their progress —
+                all in one place. Built completely end-to-end, from mobile UI to backend API.
+              </p>
+
+              <div className="pf-highlights">
+                <div className="pf-hl">
+                  <div className="pf-hl-icon">🤖</div>
+                  <div>
+                    <p className="pf-hl-title">AI Chat Tutors</p>
+                    <p className="pf-hl-sub">Get explanations on any topic</p>
+                  </div>
+                </div>
+                <div className="pf-hl">
+                  <div className="pf-hl-icon">📚</div>
+                  <div>
+                    <p className="pf-hl-title">Multiple Learning Modes</p>
+                    <p className="pf-hl-sub">Study, quiz, practice</p>
+                  </div>
+                </div>
+                <div className="pf-hl">
+                  <div className="pf-hl-icon">📊</div>
+                  <div>
+                    <p className="pf-hl-title">Progress Tracking</p>
+                    <p className="pf-hl-sub">See how far you've come</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="tags" style={{ marginTop: '1.5rem' }}>
+                <span>React Native</span>
+                <span>Node.js</span>
+                <span>Express.js</span>
+                <span>Redux Toolkit</span>
+              </div>
+            </div>
+
+            <div className="pf-right">
+              <div className="phone-mock phone-sm">
+                <div className="phone-pill" />
+                <div className="phone-screen">
+                  <div className="screen-bar">
+                    <div className="screen-avatar">AI</div>
+                    <div>
+                      <p className="screen-name">SmartLearn AI</p>
+                      <p className="screen-status">● Online</p>
+                    </div>
+                  </div>
+                  <div className="chat-area">
+                    <div className="bubble bubble-ai">
+                      <span className="bubble-label">AI Tutor</span>
+                      <p>What subject would you like help with?</p>
+                    </div>
+                    <div className="bubble bubble-user"><p>Help me with Maths</p></div>
+                    <div className="bubble bubble-ai">
+                      <span className="bubble-label">AI Tutor</span>
+                      <p>Great! Which topic — Algebra, Geometry, or Calculus?</p>
+                    </div>
+                  </div>
+                  <div className="chat-input">
+                    <span>Ask anything...</span>
+                    <div className="send-btn">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* More coming */}
+          <div className="more-card reveal" ref={r}>
+            <div className="more-left">
+              <div className="more-dots"><span /><span /><span /></div>
+              <div>
+                <h4>More projects in the works</h4>
+                <p>New apps and sites are being built. Yours could be next.</p>
+              </div>
+            </div>
+            <button className="btn-primary" onClick={() => scrollTo('contact')}>
+              Start Your Project →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT ── */}
+      <section id="about" className="section">
+        <div className="container">
+          <div className="about-wrap">
+            <div className="about-left reveal" ref={r}>
+              <div className="section-label">About</div>
+              <h2>Who you're working with</h2>
+              <p>
+                I'm Rithish, a self-driven developer from India who loves building
+                real products. I work closely with clients to understand their goals —
+                not just the tech requirements — and build accordingly.
+              </p>
+              <p>
+                Clear communication. Realistic timelines. Clean code.
+                Whether you're a startup or a solo founder, I treat your
+                project like it matters — because it does.
+              </p>
+
+              <div className="about-socials">
+                <a href="https://www.instagram.com/app_devv/" target="_blank" rel="noreferrer" className="about-soc">Instagram ↗</a>
+                <a href="https://www.linkedin.com/in/rithish-s-r-923576365/" target="_blank" rel="noreferrer" className="about-soc">LinkedIn ↗</a>
+                <a href="https://x.com/Nexias_apps" target="_blank" rel="noreferrer" className="about-soc">Twitter ↗</a>
+              </div>
+            </div>
+
+            <div className="about-right">
+              <div className="stats-grid reveal" ref={r}>
+                {[
+                  { n: '3+', l: 'Years of experience', icon: '🗓' },
+                  { n: '100%', l: 'Project ownership', icon: '🎯' },
+                  { n: '24h', l: 'Average reply time', icon: '⚡' },
+                  { n: '∞', l: 'Cups of coffee', icon: '☕' },
+                ].map((s, i) => (
+                  <div className="stat-box" key={i} ref={r}>
+                    <span className="stat-icon">{s.icon}</span>
+                    <span className="stat-n">{s.n}</span>
+                    <span className="stat-l">{s.l}</span>
+                  </div>
                 ))}
               </div>
-              <span className="soon-pill">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                </svg>
-                Play Store — Coming Soon
-              </span>
+
+              <div className="why-box reveal" ref={r}>
+                <h4>Why clients choose me</h4>
+                <div className="why-grid">
+                  {[
+                    { icon: '🔒', t: 'Full ownership', s: 'One dev, end-to-end' },
+                    { icon: '💬', t: 'Clear comms', s: 'Regular updates' },
+                    { icon: '⏱', t: 'On time', s: 'Realistic timelines' },
+                    { icon: '🧹', t: 'Clean code', s: 'Easy to maintain' },
+                    { icon: '🚀', t: 'Fast delivery', s: '3 months or less' },
+                    { icon: '🛠', t: 'Post-launch support', s: 'I don\'t disappear' },
+                  ].map((w, i) => (
+                    <div className="why-item" key={i}>
+                      <span className="why-icon">{w.icon}</span>
+                      <div>
+                        <p className="why-title">{w.t}</p>
+                        <p className="why-sub">{w.s}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <hr className="div" />
-
-      {/* CONTACT */}
-      <section id="contact">
+      {/* ── CONTACT ── */}
+      <section id="contact" className="section section-tinted">
         <div className="container">
-          <div className="contact-wrap fade-up" ref={fadeRef}>
-            <div className="sec-label">Get In Touch</div>
-            <h2>Let's build something together.</h2>
-            <p>Have an app idea or a project in mind? Reach out — I'll get back to you quickly.</p>
-            <div className="socials">
-              <a href="https://www.instagram.com/app_devv/?__pwa=1" target="_blank" rel="noreferrer" className="soc-btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <rect x="2" y="2" width="20" height="20" rx="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-                Instagram
-              </a>
-              <a href="https://www.linkedin.com/in/rithish-s-r-923576365/" target="_blank" rel="noreferrer" className="soc-btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />
-                  <rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
-                </svg>
-                LinkedIn
-              </a>
-              <a href="https://x.com/Nexias_apps" target="_blank" rel="noreferrer" className="soc-btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M4 4l16 16M4 20L20 4" />
-                </svg>
-                X / Twitter
-              </a>
+          <div className="contact-wrap">
+            <div className="contact-left reveal" ref={r}>
+              <div className="section-label">Contact</div>
+              <h2>Let's build something<br />great together.</h2>
+              <p>
+                Have a project in mind? Tell me about your idea and I'll
+                get back to you within 24 hours — no pressure, just a conversation.
+              </p>
+
+              <div className="contact-steps">
+                {[
+                  'Reach out on any platform below',
+                  'We discuss your project & goals',
+                  'I send a proposal & timeline',
+                  'We build & launch together',
+                ].map((s, i) => (
+                  <div className="cs-row" key={i}>
+                    <div className="cs-num">{i + 1}</div>
+                    <p>{s}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="socials">
+                <a href="https://www.instagram.com/app_devv/" target="_blank" rel="noreferrer">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  Instagram
+                </a>
+                <a href="https://www.linkedin.com/in/rithish-s-r-923576365/" target="_blank" rel="noreferrer">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                  LinkedIn
+                </a>
+                <a href="https://x.com/Nexias_apps" target="_blank" rel="noreferrer">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 4l16 16M4 20L20 4"/></svg>
+                  X / Twitter
+                </a>
+              </div>
+            </div>
+
+            <div className="contact-right reveal" ref={r} style={{ transitionDelay: '0.12s' }}>
+              <div className="contact-card">
+                <div className="contact-card-header">
+                  <span className="cc-emoji">👋</span>
+                  <div>
+                    <h4>Start a conversation</h4>
+                    <p>I reply within 24 hours</p>
+                  </div>
+                </div>
+                <div className="cc-divider" />
+                <div className="cc-info-rows">
+                  <div className="cc-row">
+                    <span className="cc-row-icon">📍</span>
+                    <div>
+                      <p className="cc-row-label">Location</p>
+                      <p className="cc-row-val">India (works worldwide)</p>
+                    </div>
+                  </div>
+                  <div className="cc-row">
+                    <span className="cc-row-icon">🕐</span>
+                    <div>
+                      <p className="cc-row-label">Availability</p>
+                      <p className="cc-row-val">Open to new projects</p>
+                    </div>
+                  </div>
+                  <div className="cc-row">
+                    <span className="cc-row-icon">💼</span>
+                    <div>
+                      <p className="cc-row-label">Project types</p>
+                      <p className="cc-row-val">Mobile apps & websites</p>
+                    </div>
+                  </div>
+                  <div className="cc-row">
+                    <span className="cc-row-icon">⏱</span>
+                    <div>
+                      <p className="cc-row-label">Typical timeline</p>
+                      <p className="cc-row-val">1 – 3 months</p>
+                    </div>
+                  </div>
+                </div>
+                <button className="btn-primary cc-cta" onClick={() => window.open('https://www.instagram.com/app_devv/', '_blank')}>
+                  Message on Instagram →
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer className="footer">
-        <div className="f-logo">nexias<span>_</span>dev</div>
-        <p>© 2026 Nexias Dev. All rights reserved.</p>
+        <div className="footer-inner">
+          <button className="logo" onClick={() => scrollTo('hero')}>Nexias<span>Dev</span></button>
+          <p>© 2026 Nexias Dev · Built with React</p>
+          <div className="footer-links">
+            <a href="https://www.instagram.com/app_devv/" target="_blank" rel="noreferrer">Instagram</a>
+            <a href="https://www.linkedin.com/in/rithish-s-r-923576365/" target="_blank" rel="noreferrer">LinkedIn</a>
+            <a href="https://x.com/Nexias_apps" target="_blank" rel="noreferrer">Twitter</a>
+          </div>
+        </div>
       </footer>
-    </>
+
+    </div>
   );
 }
