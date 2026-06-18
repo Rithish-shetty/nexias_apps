@@ -500,7 +500,7 @@ export default function App() {
           <button className="logo" onClick={() => scrollTo('hero')}>Nexias<span>Dev</span></button>
           <p>© 2026 Nexias Dev · Built with React</p>
           <div className="footer-links">
-            <a href="https://www.instagram.com/app_devv/" target="_blank" rel="noreferrer">Instagram</a>
+            <a href="https://www.instagram.com/nexias_dev?igsh=enQ0OHgzczVndmdw" target="_blank" rel="noreferrer">Instagram</a>
             <a href="https://www.linkedin.com/in/rithish-s-r-923576365/" target="_blank" rel="noreferrer">LinkedIn</a>
             <a href="https://x.com/Nexias_apps" target="_blank" rel="noreferrer">Twitter</a>
           </div>
