@@ -448,7 +448,7 @@ export default function App() {
             <div className="contact-right reveal" ref={r} style={{ transitionDelay: '0.12s' }}>
               <div className="contact-card">
                 <div className="contact-card-header">
-                  <span className="cc-emoji">👋</span>
+                  <span className="cc-emoji">👋 </span>
                   <div>
                     <h4>Start a conversation</h4>
                     <p>I reply within 24 hours</p>
